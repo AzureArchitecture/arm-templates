@@ -1,0 +1,105 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "DisplayName": "Azure Storage Account.",
+    "Author": "Azure Architecture",
+    "UpdateDate": "[utcNow()]"
+  },
+  "parameters": {
+    "resourceTags": {
+      "type": "object",
+      "metadata": {
+        "description": "Configuration for this resource"
+      }
+    },
+    "ResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Resource Group."
+      }
+    },
+    "StorageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the storage account."
+      }
+    },
+    "AccountType": {
+      "type": "string",
+      "metadata": {
+        "description": "The type of storage account."
+      },
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Premium_LRS"
+      ]
+    },
+    "StorageKind": {
+      "type": "string",
+      "metadata": {
+        "description": "The kind of storage account."
+      },
+      "allowedValues": [
+        "Storage",
+        "StorageV2",
+        "BlobStorage"
+      ]
+    },
+    "AccessTier": {
+      "type": "string",
+      "allowedValues": [
+        "Hot",
+        "Cool"
+      ],
+      "metadata": {
+        "description": "This setting is required if using Blob Storage as the storageKind, otherwise can be left blank"
+      }
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "apiVersion": "2018-02-01",
+      "name": "[parameters('StorageAccountName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('accountType')]"
+      },
+      "kind": "[parameters('storageKind')]",
+      "tags": "[parameters('resourceTags')]",
+      "properties": {
+        "encryption": {
+          "services": {
+            "blob": {
+              "enabled": true
+            },
+            "file": {
+              "enabled": true
+            }
+          },
+          "keySource": "Microsoft.Storage"
+        },
+        "accessTier": "[parameters('accessTier')]",
+        "supportsHttpsTrafficOnly": true
+      }
+    }
+  ],
+  "outputs": {
+    "storage-account-key": {
+      "type": "string",
+      "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts',parameters('StorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
+    },
+    "storage-account-name": {
+      "type": "string",
+      "value": "[parameters('StorageAccountName')]"
+    },
+    "storage-account-connection-string": {
+      "type": "string",
+      "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('StorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts',parameters('StorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value, ';EndpointSuffix=core.windows.net')]"
+    }
+  }
+}
